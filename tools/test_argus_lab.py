@@ -100,6 +100,61 @@ def claim(**over):
     return base
 
 
+class ExperimentReceiptTests(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.runs = Path(tmp.name)
+
+    def add_receipt(self, name, args, status=None, comparisons=(), tool='experiment', **output):
+        path = self.runs / 'receipts' / name
+        path.mkdir(parents=True)
+        request = dict(schema=1, tool=tool, started_at=name, arguments=args)
+        (path / 'request.json').write_text(json.dumps(request), encoding='utf-8')
+        if status:
+            (path / 'result.json').write_text(json.dumps(dict(status=status, output=output)), encoding='utf-8')
+        for index, report in enumerate(comparisons, 1):
+            (path / f'comparison-{index:02}.json').write_text(json.dumps({'report': report}), encoding='utf-8')
+        return path
+
+    def test_receipt_status_and_filtering(self):
+        failed = self.add_receipt('01', {'map': 'dm2'}, 'failed', error='launch refused')
+        self.add_receipt('02', {'map': 'dm4'})
+        bad = self.add_receipt('03', {'map': 'dm2'})
+        (bad / 'result.json').write_text('broken json', encoding='utf-8')
+        rows = argus_lab.experiment_receipts(self.runs)
+        self.assertEqual([r['status'] for r in rows], ['invalid', 'unfinished', 'failed'])
+        self.assertEqual(rows[-1]['error'], 'launch refused')
+        self.assertEqual([r['path'] for r in argus_lab.experiment_receipts(
+            self.runs, mapname='dm2', status='invalid')], [str(bad)])
+        rows = argus_lab.experiment_receipts(self.runs, mapname='dm4', last=1)
+        self.assertEqual([r['status'] for r in rows], ['unfinished'])
+
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            rc = argus_lab.main(['--root', str(self.runs), 'receipts', '--runs', str(self.runs),
+                                 '--status', 'failed', '--json'])
+        self.assertEqual(rc, 0)
+        self.assertEqual([r['path'] for r in json.loads(stdout.getvalue())], [str(failed)])
+
+    def test_inconclusive_uses_the_selected_map_and_primary_metric(self):
+        def report(mapname, primary, primary_call):
+            return dict(b={'map': mapname}, verdict='parity', primary=primary, stats=[
+                {'name': primary, 'sprt': primary_call}, {'name': 'freezes', 'sprt': 'continue'}
+            ])
+
+        self.add_receipt('01', {}, 'completed', tool='matrix_experiment', comparisons=[
+            report('dm2', 'engagements', 'accept'), report('dm4', 'stalls', 'abandon')
+        ])
+        self.assertFalse(argus_lab.experiment_receipts(self.runs, mapname='dm2', inconclusive=True))
+        rows = argus_lab.experiment_receipts(self.runs, mapname='dm4', inconclusive=True)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['status'], 'completed')
+        self.assertEqual(rows[0]['comparisons'][0]['unresolved'], [])
+        self.assertEqual(rows[0]['comparisons'][1]['unresolved'],
+                         [{'metric': 'stalls', 'call': 'abandon', 'note': None}])
+
+
 @contextlib.contextmanager
 def no_lab_binary():
     with mock.patch.object(argus_lab, 'lab_binary', return_value=None):

@@ -336,6 +336,8 @@ pub struct Gate {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CompareReport {
+    #[serde(skip)]
+    pub(crate) tape_paths: ComparisonPaths,
     pub verdict: Verdict,
     pub headline: String,
     pub gate_card: String,
@@ -369,6 +371,12 @@ pub struct CompareReport {
     /// only that gate can convict and the rest flag (#377).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct ComparisonPaths {
+    pub(crate) controls: Vec<std::path::PathBuf>,
+    pub(crate) candidates: Vec<std::path::PathBuf>,
 }
 
 /// Compact brief: selected tactical counts and no per-sample bot fields.
@@ -1082,13 +1090,17 @@ pub fn hull0_for_map(cfg: &Config, map: &str) -> Option<crate::bsp::Hull0> {
 
 pub fn brief_run(cfg: &Config, log: &str, map_hint: Option<&str>) -> Result<MatchBrief, String> {
     let path = resolve_run_ref(cfg, log, map_hint)?;
-    let tape = parse_tape_path(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    brief_resolved(cfg, &path, map_hint)
+}
+
+fn brief_resolved(cfg: &Config, path: &Path, map_hint: Option<&str>) -> Result<MatchBrief, String> {
+    let tape = parse_tape_path(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let map = brief_map(&tape, map_hint);
     let hull = map.as_deref().and_then(|m| hull0_for_map(cfg, m));
     let mut brief = brief_tape_lava(&tape, map_hint, hull.as_ref());
     attach_nav(cfg, &mut brief);
     let snapshot = match brief.map.as_deref() {
-        Some(map) => match crate::nav_provenance::read_tape(&path, map) {
+        Some(map) => match crate::nav_provenance::read_tape(path, map) {
             Ok(snapshot) => snapshot,
             Err(error) => {
                 brief
@@ -1102,7 +1114,7 @@ pub fn brief_run(cfg: &Config, log: &str, map_hint: Option<&str>) -> Result<Matc
     attach_coverage_with_snapshot(cfg, &tape, &mut brief, snapshot.as_ref());
     attach_atlas(cfg, &mut brief, hull.as_ref());
     attach_item_control(cfg, &tape, &mut brief);
-    attach_paired_demo(cfg, &path, &mut brief);
+    attach_paired_demo(cfg, path, &mut brief);
     brief.next_steps = suggest_next(&brief, None);
     for step in &mut brief.next_steps {
         step.look_at = crate::qc_index::look_at(cfg, &step.look_at);
@@ -2204,6 +2216,7 @@ fn wrong_map_findings(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Vec
 
 fn refuse_wrong_map(a: MatchBrief, b: MatchBrief, findings: Vec<String>) -> CompareReport {
     CompareReport {
+        tape_paths: ComparisonPaths::default(),
         verdict: Verdict::Mixed,
         headline: "Mixed: a wrong-map tape invalidates this comparison".into(),
         gate_card: "WRONG MAP: no gameplay verdict; stage the requested BSP and record fresh tapes"
@@ -2239,6 +2252,7 @@ fn fatal_tape_findings(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Ve
 
 fn refuse_fatal_tape(a: MatchBrief, b: MatchBrief, findings: Vec<String>) -> CompareReport {
     CompareReport {
+        tape_paths: ComparisonPaths::default(),
         verdict: Verdict::Mixed,
         headline: "Mixed: a fatal engine error invalidates this comparison".into(),
         gate_card: "FATAL TAPE: record a replacement before comparing gameplay".into(),
@@ -2676,6 +2690,7 @@ fn compare_gates(a: MatchBrief, b: MatchBrief) -> CompareReport {
     );
 
     CompareReport {
+        tape_paths: ComparisonPaths::default(),
         verdict,
         headline,
         gate_card,
@@ -2840,8 +2855,11 @@ pub fn compare_runs_band(
         return Err("compare_runs_band needs at least one candidate tape".into());
     }
     let mut cands = Vec::new();
+    let mut tape_paths = ComparisonPaths::default();
     for l in candidate_logs {
-        cands.push(brief_run(cfg, l, map_hint)?);
+        let path = resolve_run_ref(cfg, l, map_hint)?;
+        cands.push(brief_resolved(cfg, &path, map_hint)?);
+        tape_paths.candidates.push(path);
     }
     let map = map_hint
         .map(str::to_string)
@@ -2852,14 +2870,20 @@ pub fn compare_runs_band(
         .unwrap_or_default();
     let mut ctrls = Vec::new();
     for n in &names {
-        if let Ok(b) = brief_run(cfg, n, map.as_deref()) {
-            ctrls.push(b);
+        if let Ok(path) = resolve_run_ref(cfg, n, map.as_deref()) {
+            if let Ok(brief) = brief_resolved(cfg, &path, map.as_deref()) {
+                ctrls.push(brief);
+                tape_paths.controls.push(path);
+            }
         }
     }
     if ctrls.is_empty() {
-        ctrls.push(brief_run(cfg, "baseline", map.as_deref())?);
+        let path = resolve_run_ref(cfg, "baseline", map.as_deref())?;
+        ctrls.push(brief_resolved(cfg, &path, map.as_deref())?);
+        tape_paths.controls.push(path);
     }
     let mut rep = compare_band_primary_scaled(&cands, &ctrls, primary);
+    rep.tape_paths = tape_paths;
     rep.baseline_run = names.first().cloned();
     Ok(rep)
 }
@@ -2883,16 +2907,11 @@ fn compare_runs_inner(
     // brief the candidate FIRST when no map was named: its header
     // carries the map, and without it "baseline" resolved to dm4 and
     // the gates ran on dm4 bars whatever the candidate actually was.
-    let b = brief_run(cfg, log_b, map_hint)?;
+    let candidate = resolve_run_ref(cfg, log_b, map_hint)?;
+    let b = brief_resolved(cfg, &candidate, map_hint)?;
     let hint_owned = map_hint.map(str::to_string).or_else(|| b.map.clone());
-    let base_name = resolve_run_ref(cfg, log_a, hint_owned.as_deref())
-        .ok()
-        .and_then(|p| {
-            p.file_stem()
-                .and_then(|s| s.to_str())
-                .map(|s| s.to_string())
-        });
-    let a = brief_run(cfg, log_a, hint_owned.as_deref())?;
+    let control = resolve_run_ref(cfg, log_a, hint_owned.as_deref())?;
+    let a = brief_resolved(cfg, &control, hint_owned.as_deref())?;
     let mut report = if scale {
         compare_briefs_scaled(a, b)
     } else {
@@ -2908,7 +2927,14 @@ fn compare_runs_inner(
             "a compared tape carries HUMAN tracks - human sessions are review material, not gate material; treat this verdict as indicative only".into(),
         );
     }
-    report.baseline_run = base_name;
+    report.baseline_run = control
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .map(str::to_owned);
+    report.tape_paths = ComparisonPaths {
+        controls: vec![control],
+        candidates: vec![candidate],
+    };
     for step in &mut report.next_steps {
         step.look_at = crate::qc_index::look_at(cfg, &step.look_at);
     }

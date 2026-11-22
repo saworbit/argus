@@ -11,6 +11,8 @@ usage:
                                                   audit a comparison before believing it
   argus_lab.py triage TAPE [--min N] [--json]     match a tape's trouble to known claims
   argus_lab.py review TAPE                        one fresh session: gates, goal eligibility, new trouble
+  argus_lab.py receipts [--map M] [--status S] [--inconclusive] [--last N] [--json]
+                                                  find saved experiments and comparisons
   argus_lab.py claims [--status S] [--check]      list or validate the claims ledger
   argus_lab.py ledger [--write PATH]              the joined evidence index as JSON
   argus_lab.py pyramid --maps M[,M] [--through N] [--dry-run]
@@ -56,6 +58,8 @@ import argus_tape  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 STATUSES = ('open', 'supported', 'refuted', 'fixed', 'parked')
+SAVED_RECEIPT_STATUSES = ('completed', 'failed', 'incomplete')
+RECEIPT_STATUSES = (*SAVED_RECEIPT_STATUSES, 'unfinished', 'invalid')
 KINDS = ('defect', 'hypothesis', 'rule', 'graveyard')
 TIERS = {1: 'static checks', 2: 'deterministic cases', 3: 'within-match A/B',
          4: 'banded ladder', 5: 'human session'}
@@ -1782,6 +1786,101 @@ def review(root, path, out=None):
 
 # ---------------------------------------------------------------- claims and ledger
 
+def experiment_receipt(path):
+    """Read the lab's saved result and statistical calls without opening its tapes."""
+    row = dict(path=str(path), tool=None, started_at=None, maps=[], question=None,
+               status='invalid', error=None, comparisons=[])
+    try:
+        request = read_json(path / 'request.json')
+        if request.get('schema') != 1:
+            raise ValueError('unsupported experiment receipt schema')
+        args = request['arguments']
+        maps = [args.get('map')]
+        if isinstance(args.get('maps'), list):
+            maps.extend(args['maps'])
+        row.update(tool=request['tool'], started_at=request['started_at'], question=args.get('question'),
+                   maps=sorted({m for m in maps if isinstance(m, str)}))
+        try:
+            result = read_json(path / 'result.json')
+        except FileNotFoundError:
+            result, status = {}, 'unfinished'
+        else:
+            status = result['status']
+            if status not in SAVED_RECEIPT_STATUSES:
+                raise ValueError(f'unknown receipt status {status!r}')
+        output = result.get('output')
+        if isinstance(output, dict):
+            error = output.get('error') or output.get('message')
+            if status == 'failed' and output.get('stage'):
+                error = error or f'{output["stage"]} failed'
+            matrix = output.get('results', [])
+            row['error'] = error or ' | '.join(
+                f'{match["map"]} {match["error"]}' for match in matrix if match.get('error')
+            ) or None
+        else:
+            matrix = []
+        maps.extend(match.get('map') for match in matrix)
+        row['maps'] = sorted({m for m in maps if isinstance(m, str)})
+        for saved in sorted(path.glob('comparison*.json')):
+            comparison = read_json(saved)
+            report = comparison.get('report') or {}
+            candidate = report.get('b') or {}
+            mapname = candidate.get('requested_map') or candidate.get('map')
+            if not mapname and len(row['maps']) == 1:
+                mapname = row['maps'][0]
+            primary = report.get('primary')
+            calls = [
+                dict(metric=s['name'], call=s['sprt'], note=s.get('note'))
+                for s in report.get('stats', [])
+                if s.get('sprt') in ('continue', 'abandon') and (not primary or s.get('name') == primary)
+            ]
+            row['comparisons'].append(dict(file=saved.name, map=mapname, verdict=report.get('verdict'),
+                                           primary=primary, unresolved=calls, error=comparison.get('error')))
+            if mapname and mapname not in row['maps']:
+                row['maps'].append(mapname)
+        row['maps'].sort()
+        row['status'] = status
+    except (OSError, ValueError, TypeError, AttributeError, KeyError) as error:
+        row['error'] = str(error)
+    return row
+
+
+def experiment_receipts(runs, *, mapname=None, status=None, inconclusive=False, last=10):
+    rows = []
+    for request in sorted((runs / 'receipts').glob('*/request.json'), reverse=True):
+        row = experiment_receipt(request.parent)
+        if status and row['status'] != status:
+            continue
+        if mapname and mapname not in row['maps']:
+            continue
+        if inconclusive and not any(c['unresolved'] and (not mapname or c['map'] == mapname)
+                                    for c in row['comparisons']):
+            continue
+        rows.append(row)
+        if len(rows) >= last:
+            break
+    return rows
+
+
+def print_experiment_receipts(rows, runs, out=None):
+    out = out or sys.stdout
+    if not rows:
+        print(f'No matching experiment receipts in {runs / "receipts"}', file=out)
+    for row in rows:
+        tool = row['tool'] or 'unknown tool'
+        maps = ', '.join(row['maps']) or 'map unknown'
+        print(f'{row["status"]} | {tool} | {maps} | {row["path"]}', file=out)
+        if isinstance(row['question'], str):
+            print(f'  {" ".join(row["question"].split())}', file=out)
+        if row['error']:
+            print(f'  {row["error"]}', file=out)
+        for comparison in row['comparisons']:
+            label = comparison['map'] or 'comparison'
+            outcome = comparison['verdict'] or comparison['error'] or 'no verdict recorded'
+            calls = ', '.join(f'{call["metric"]} {call["call"]}' for call in comparison['unresolved'])
+            print(f'  {label} | {outcome}' + (f' ({calls})' if calls else ''), file=out)
+
+
 def print_claims(claims, out=None):
     out = out or sys.stdout
     print('| Claim | Status | Kind | Tier | Cheapest test | Title |', file=out)
@@ -2384,6 +2483,13 @@ def main(argv=None):
     p.add_argument('--min', type=int, default=3, help='smallest cluster to show unless it holds a freeze or an unforced death')
     p = sub.add_parser('review')
     p.add_argument('tape')
+    p = sub.add_parser('receipts')
+    p.add_argument('--runs', type=Path, help='directory containing receipts, overriding ARGUS_RUNS')
+    p.add_argument('--map', dest='mapname')
+    p.add_argument('--status', choices=RECEIPT_STATUSES)
+    p.add_argument('--inconclusive', action='store_true', help='only comparisons whose statistics call continue or abandon')
+    p.add_argument('--last', type=int, default=10, help='maximum number of matching receipts')
+    p.add_argument('--json', action='store_true')
     p = sub.add_parser('claims')
     p.add_argument('--status', choices=STATUSES)
     p.add_argument('--check', action='store_true')
@@ -2398,6 +2504,18 @@ def main(argv=None):
     p.add_argument('--dry-run', action='store_true')
     a = ap.parse_args(argv)
     root = Path(a.root).resolve()
+    if a.cmd == 'receipts':
+        if a.last < 1:
+            ap.error('--last must be positive')
+        configured_runs = os.environ.get('ARGUS_RUNS')
+        runs = (a.runs or (Path(configured_runs) if configured_runs else root / 'runs')).resolve()
+        rows = experiment_receipts(runs, mapname=a.mapname, status=a.status,
+                                   inconclusive=a.inconclusive, last=a.last)
+        if a.json:
+            print(json.dumps(rows, indent=1))
+        else:
+            print_experiment_receipts(rows, runs)
+        return 0
     for name in ('lab_objective.json', 'lab_claims.json'):
         if not (root / 'tools' / name).is_file():
             print(f'{root} has no tools/{name}; pass --root with a checkout that carries the lab spine',

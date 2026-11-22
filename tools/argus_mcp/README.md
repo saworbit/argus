@@ -1695,6 +1695,7 @@ default QC path. Preview status uses a fresh receipt, independent of stdout.
 | `experiment` | full lab | Compile + short match + **duration-scaled lite** A/B. `detail=full` dumps both tapes. Duration 10-185 s, default 30. `primary=<metric>` pre-registers the gate this change was predicted to move; only it convicts. |
 | `matrix_experiment` | full lab | One compile, then a short probe on each of dm2/dm3/dm4/dm6/lqdm2 (default 20 s). |
 | `brief_run` | `ARGUS_ROOT` | Lite brief of one log. `detail=full` for the whole tape. |
+| `see what=receipts` | `ARGUS_ROOT`, `ARGUS_PYTHON` | Find saved receipts with `name=failed` or `name=dm2:inconclusive`. |
 | `compare_runs` | `ARGUS_ROOT` | Unscaled lite A/B. `detail=full` for both briefs. Default `log_a` is `baseline`. |
 | `suggest_next` | `ARGUS_ROOT` | Just the QC places to open |
 | `qc_find` | `ARGUS_ROOT` | Argus functions by name, role (`hazard`, `combat`, `nav`), or comment |

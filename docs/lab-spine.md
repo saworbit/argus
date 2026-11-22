@@ -4,10 +4,9 @@
 [Operator guide](../tools/argus_mcp/README.md)
 
 `tools/argus_lab.py` joins the lab's instruments into one loop. It adds no new
-instrument and no second tape parser. It reads what the lab already keeps,
-plus two hand-written files, and answers four questions: what is true now,
-what is stale, what a new tape's trouble is, and whether a comparison can be
-believed.
+instrument and no second tape parser. It reads what the lab already keeps
+to report what is true now, what is stale, what a new tape's trouble is,
+and whether a comparison can be believed. It also lists saved experiments.
 
 ## What it reads
 
@@ -17,6 +16,7 @@ believed.
 | `tools/lab_claims.json` | hand | Open defects and hypotheses, fixed cells, the graveyard, supported rules |
 | `tools/refuted_claims.json` | hand | Imported as refuted rules, so they are not repeated in the claims |
 | `runs/tape_index.tsv` | `argus-mcp corpus` | Per-tape metrics, tick class and kind for the skeptic |
+| `runs/receipts/` | experiment and comparison tools | Saved questions, outcomes and statistical calls |
 | `runs/human_scorecard.tsv` | `argus_longi.py`, every harvest | Session gates and goal measures |
 | `runs/baselines.json`, `benchmarks/*.json` | `baseline_set`, hand | What each verdict is measured against |
 | `src/argus_nav_<map>.qc.json` and `.probe.json` | navgen, `probelinks` | Graph identity, refused links |
@@ -41,6 +41,7 @@ From the repository root:
 python tools/argus_lab.py state
 python tools/argus_lab.py stale
 python tools/argus_lab.py session --last 5
+python tools/argus_lab.py receipts --map dm2 --inconclusive
 python tools/argus_lab.py triage shane_dm4_2026-11-14_ed8926
 python tools/argus_lab.py skeptic ab_dm4_shipctl1 ab_dm4_shipctl2 --vs ab_dm4_shipnew1 ab_dm4_shipnew2
 python tools/argus_lab.py claims --check
@@ -56,6 +57,24 @@ objective is signed, the last five human sessions against the gates, the goal
 verdict per goal map, every stale artefact, the open claims and the three
 cheapest next steps. `--write PATH` saves it. Start a session here instead of
 reading the history.
+
+### `receipts`
+
+In the MCP, use `see what=receipts` for the newest receipts, `name=failed`
+for failed runs, or `name=dm2:inconclusive` for inconclusive comparisons on
+dm2. The MCP searches its configured run directory.
+
+Lists the ten newest matching [experiment receipts](telemetry.md#experiment-receipts)
+with their directory paths. Filter by `--map` or by execution `--status`,
+such as `failed` or `unfinished`. A receipt with a request and no result
+is unfinished. It may still be running. Use `--last N` to change the limit
+or `--json` for structured output.
+
+`--inconclusive` selects comparisons whose saved statistical calls include
+`continue` or `abandon`. If the comparison named a primary metric, the filter
+uses that metric. A completed match can still have an inconclusive comparison.
+Set `--runs DIR` to inspect a backup or another run directory. It overrides
+`ARGUS_RUNS` and the default `runs/`.
 
 ### `stale`
 

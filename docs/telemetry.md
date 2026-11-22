@@ -55,6 +55,45 @@ walk-offs from knock-ins. It needs the map's BSP (`ARGUS_MAPS`,
 For automated comparison matches, let `experiment` or `matrix_experiment`
 launch the dedicated engine with the lab's rate/configuration controls.
 
+## Experiment receipts
+
+The MCP tools `experiment`, `matrix_experiment`, `campaign_experiment` and
+`compare_runs` save one local receipt directory per call in
+`runs/receipts/` (or under `ARGUS_RUNS`). The optional `question` argument
+records what the run was intended to settle.
+
+- `request.json` records the supplied settings, lab build and source state.
+- `match-*.json` records each attempted match and any error. When available,
+  the console tape and matching navigation receipt are copied alongside it,
+  so the evidence survives reuse of a run name.
+- `compile.json` records compiler diagnostics when the compiler returns them.
+  `comparison*.json` records input tape names and checksums, the native
+  findings, verdict and any statistical calls, or the comparison error.
+- `result.json` records the outcome of the call, including failures. A
+  request directory without a finished result records an unfinished call.
+
+Back up the receipt directory with the tapes and demos. It is machine-local
+and Git ignores it. Record durable rulings in the
+[lab claims register](lab-spine.md#claims) with a reference to the evidence.
+Search the saved records with [`argus_lab.py receipts`](lab-spine.md#receipts).
+
+## Back up new evidence
+
+Run the incremental backup against a destination outside the checkout.
+An optional verified snapshot seeds the index on the first run.
+
+```text
+python tools/backup_telemetry.py --destination <backup-folder> --seed <verified-snapshot>
+```
+
+The command backs up `runs/` including receipts and demos, selected fixture
+evidence in `backups/`, and the lab's claims and benchmarks. Each new or
+changed file lands in a dated `updates/` batch with a SHA-256 manifest.
+Files that change while being copied are retried on the next run. Earlier
+batches and seed files remain available when a live file is replaced or
+removed. To restore the latest copy of a file, start with the seed (including
+its supplement, if present), then apply the dated batches in order.
+
 ## Read a saved session
 
 **MCP calls**, using the harvested stem:

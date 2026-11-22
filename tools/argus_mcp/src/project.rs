@@ -51,6 +51,7 @@ pub fn see_vocab() -> serde_json::Value {
             "plan": "GOAP plan events (name=latest or a run)",
             "status": "live dedicated child. Pass since_line for an incremental tail",
             "run": "brief a harvested log (name=ab_dm4_water or latest)",
+            "receipts": "saved experiments (name=failed, inconclusive, dm2 or dm2:inconclusive)",
             "last": "what this session last opened, plus last experiment",
             "knobs": "live cvars vs compile-time constants",
         },
@@ -206,7 +207,7 @@ mod tests {
         let see = v.get("see").unwrap();
         for key in [
             "project", "last", "run", "status", "fn", "map", "live", "knobs", "path", "search",
-            "timeline", "plan",
+            "timeline", "plan", "receipts",
         ] {
             assert!(see.get(key).is_some(), "missing see.{key}");
         }
