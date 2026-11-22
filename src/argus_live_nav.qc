@@ -24,7 +24,7 @@ float al_peak_edicts;
 .vector al_swim_wish;
 .float al_swim_request, al_swim_retry, al_swim_diving;
 .vector al_swim_tried;
-.float al_exit_scan, al_exit_memory;
+.float al_exit_scan, al_exit_memory, al_exit_level;
 .vector al_exit_from, al_exit_avoid, al_exit_previous, al_exit_older, al_exit_oldest;
 .entity al_exit_button, al_exit_prize;
 .float al_exit_button_after, al_exit_prize_until;
@@ -35,6 +35,7 @@ void() Argus_ExploreReset =
     self.ar_exploring = FALSE;
     self.al_exit_scan = 0;
     self.al_exit_memory = 0;
+    self.al_exit_level = FALSE;
     self.al_exit_button = world;
     self.al_exit_button_after = 0;
     self.al_exit_prize = world;
@@ -293,8 +294,8 @@ void(entity button) Argus_ExplorePress =
 float() Argus_ExploreExit =
 {
     local float wet, remaining, range, yaw, reach, wall, score, best, i, door, approachdist, rise, rays;
-    local float directed, prize;
-    local vector direction, heading, supply, start, point, chosen, bank, approach;
+    local float directed, prize, chosen_level;
+    local vector direction, heading, supply, start, point, chosen, bank, approach, to;
     local entity item, button;
 
     if (!deathmatch || coop || self.ar_taskgoal != world || self.ar_mode == 2
@@ -306,7 +307,17 @@ float() Argus_ExploreExit =
     wet = self.ar_feettype == CONTENT_WATER;
     if (self.ar_exploreuntil > 0)
     {
-        remaining = vlen (self.ar_exploregoal - self.origin);
+        // The door can take over after the passage was selected. Keep its
+        // original arrival check even after the opener releases steering.
+        if (self.ar_door != world) self.al_exit_level = FALSE;
+        to = self.ar_exploregoal - self.origin;
+        remaining = vlen (to);
+        // A dry lane probe can keep its starting height across steps.
+        // Accept the bot's footprint over that target within two steps
+        // of its height. Door approaches and explicit landings keep z.
+        if (remaining > 30 && self.al_exit_level && !wet && (self.flags & FL_ONGROUND)
+            && fabs (to_z) <= 36 && to_x * to_x + to_y * to_y <= 16 * 16)
+            remaining = 0;
         if (remaining < 380 && time < self.ar_exploreuntil)
         {
             if (self.al_exit_button != world)
@@ -351,6 +362,7 @@ float() Argus_ExploreExit =
             self.al_exit_prize = Argus_SwitchPrize (find (world, targetname, button.target));
             self.al_exit_from = self.origin;
             self.ar_exploregoal = point;
+            self.al_exit_level = FALSE;
             self.ar_exploreuntil = time + 1.3;
             self.al_exit_button_after = time + 5;
             dprint ("ARGUS explore switch "); dprint (self.netname); dprint ("\n");
@@ -440,6 +452,7 @@ float() Argus_ExploreExit =
         {
             if (door && reach + 38 >= wall) point = point + direction * 40;
             chosen = point;
+            chosen_level = !wet && !door && point_z == self.origin_z;
             best = score;
         }
         i = i + 1;
@@ -448,6 +461,7 @@ float() Argus_ExploreExit =
 
     self.al_exit_from = self.origin;
     self.ar_exploregoal = chosen;
+    self.al_exit_level = chosen_level;
     self.ar_exploreuntil = time + 1.8;
     if (wet) self.ar_exploreuntil = time + 2.6;
     dprint ("ARGUS explore "); dprint (self.netname); dprint (" ");
