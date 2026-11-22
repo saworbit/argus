@@ -96,6 +96,9 @@ vector  an_avoidpos3; float an_avoidrad3; float an_avoiduntil3;
 .float  ar_pending;         // on bots: waiting for router
 .float  ar_shopping;        // on bots: waiting for a full scoring flood
 .float  ar_routefail;
+// East dm4 portal recovery owns one shopping flood from a supported seat.
+.float ar_dm4warp_until;
+.entity ar_dm4warp_goal;
 .float  ar_hopjump;         // on bots: current hop crosses a jump link
 .float  ar_hopspeed;        // nav-baked approach speed for that jump
 .float  ar_hoprj;           // on bots: 1 = rocket-jump armed, 2 = airborne
@@ -287,6 +290,7 @@ float(entity bot, vector to) Argus_CurrentPathAvoided =
 // ---------------------------------------------------------------- builders
 
 void() Argus_PickGoal;
+void(entity bot) Argus_Dm4WarpShopped;
 
 entity(vector org) Argus_NavNode =
 {
@@ -1107,12 +1111,14 @@ void() Argus_Shop_Finish =
             an_bot.ar_routegoal = an_bot.ar_goal;
             an_shop = 0;
             Argus_Route_Finish ();
+            if (an_bot.ar_dm4warp_until) Argus_Dm4WarpShopped (an_bot);
             return;
         }
     }
 
     an_shop = 0;
     an_busy = 0;
+    if (an_bot.ar_dm4warp_until) Argus_Dm4WarpShopped (an_bot);
 };
 
 // Does this map have any keyed door at all? Answered once and cached.
