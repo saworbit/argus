@@ -39,6 +39,7 @@ pub mod pov_trigger;
 pub mod project;
 pub(crate) mod python_helper;
 pub mod qc_index;
+mod receipt;
 pub mod render_capture;
 pub mod resources;
 pub mod run_lease;

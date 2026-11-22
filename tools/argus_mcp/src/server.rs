@@ -19,11 +19,12 @@ use crate::nav_view::{around_point, item_view, node_deep, route_ref};
 use crate::navgen::nav_generate;
 use crate::project::{project_view, see_vocab};
 use crate::qc_index::{index_argus, qc_file_slice, qc_find, qc_read, qc_search};
+use crate::receipt::{MatchAttempt, Receipt};
 use crate::see_alias::normalize_see;
 use crate::session::{ExperimentRecord, SessionSeen};
 use crate::tape_view::{bot_deep, load_named_tape, plan_view, split_tape_bot, timeline};
 use crate::task_store::TaskStore;
-use rmcp::handler::server::tool::{ToolCallContext, ToolRouter};
+use rmcp::handler::server::tool::{Extension, ToolCallContext, ToolRouter};
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
     CallToolRequestParams, CallToolResponse, CallToolResult, CancelTaskParams,
@@ -984,6 +985,10 @@ fn tool_err(msg: impl Into<String>) -> Result<CallToolResult, McpError> {
     )]))
 }
 
+fn receipt_error(error: std::io::Error) -> McpError {
+    McpError::internal_error(format!("could not save the lab receipt: {error}"), None)
+}
+
 fn hint_for(error: &str) -> String {
     let e = error.to_ascii_lowercase();
     if e.contains("argus_") && (e.contains("missing") || e.contains("does not exist")) {
@@ -1204,6 +1209,7 @@ pub struct CompareArgs {
     pub detail: Option<String>,
     #[schemars(description = "json (default) or csv, about half the tokens.")]
     pub format: Option<String>,
+    pub question: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1261,12 +1267,10 @@ pub struct TuneArgs {
 pub struct SeeArgs {
     #[serde(default)]
     #[schemars(
-        description = "What to open: help|project|lab|map|recipe|node|path|item|fn|file|search|const|live|bot|timeline|around|plan|status|run|last|knobs. Empty defaults to project."
+        description = "What to open: help|project|lab|map|recipe|node|path|item|fn|file|search|const|live|bot|timeline|around|plan|status|run|receipts|last|knobs."
     )]
     pub what: String,
-    #[schemars(
-        description = "Name: bot (Reap), function (Argus_MoveHazard), const (AR_JUMPVEL), map (dm4), node (dm4:56), run (latest)"
-    )]
+    #[schemars(description = "Bot, QC symbol, map, map:node, run or receipt filter (dm2:failed).")]
     pub name: Option<String>,
     #[schemars(description = "For map: brief (default) or full")]
     pub detail: Option<String>,
@@ -1330,6 +1334,7 @@ pub struct ExperimentArgs {
         description = "Pre-register the deciding gate: stall_parity | engagements | lava_deaths | freezes."
     )]
     pub primary: Option<String>,
+    pub question: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1344,6 +1349,7 @@ pub struct CampaignExperimentArgs {
     #[schemars(description = "Compile first. Default true.")]
     pub compile: Option<bool>,
     pub run_name: Option<String>,
+    pub question: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1355,6 +1361,7 @@ pub struct MatrixArgs {
     pub skill: Option<u32>,
     #[schemars(description = "Compile first. Default true.")]
     pub compile: Option<bool>,
+    pub question: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -2122,6 +2129,7 @@ impl Argus {
         &self,
         Parameters(args): Parameters<CompareArgs>,
         peer: Peer<RoleServer>,
+        Extension(receipt): Extension<Receipt>,
     ) -> Result<CallToolResult, McpError> {
         let cfg = match cfg_read_or_err() {
             Ok(c) => c,
@@ -2139,7 +2147,11 @@ impl Argus {
             map = elicit_baseline_map(&peer, &offered).await;
         }
         let log_a = args.log_a.as_deref().unwrap_or("baseline");
-        match intel_compare(&cfg, log_a, &args.log_b, map.as_deref()) {
+        let comparison = intel_compare(&cfg, log_a, &args.log_b, map.as_deref());
+        receipt
+            .record_comparison("comparison.json", &comparison)
+            .map_err(receipt_error)?;
+        match comparison {
             Ok(r) => {
                 if crate::intel::want_csv(args.format.as_deref()) {
                     report_csv_ok(crate::intel::compare_csv(&r))
@@ -2546,13 +2558,28 @@ impl Argus {
     }
 
     #[tool(
-        description = "One inspect call. what=help|project|lab|map|recipe|node|fn|const|live|bot|status|run|last|knobs. Use this before inventing a pipeline."
+        description = "Inspect the lab, a map, source, a match or experiment receipts. Use what=help for names."
     )]
     async fn see(&self, Parameters(args): Parameters<SeeArgs>) -> Result<CallToolResult, McpError> {
         let what = normalize_see(&args.what);
-        self.note_see(&what, args.name.as_deref()).await;
+        if what != "receipts" {
+            self.note_see(&what, args.name.as_deref()).await;
+        }
         match what.as_str() {
             "help" => json_ok(&see_vocab()),
+            "receipts" => {
+                let cfg = match cfg_read_or_err() {
+                    Ok(c) => c,
+                    Err(r) => return Ok(r),
+                };
+                match crate::receipt::search(&cfg, args.name.as_deref().unwrap_or("")).await {
+                    Ok(rows) => json_ok(&serde_json::json!({
+                        "runs": cfg.runs,
+                        "receipts": rows,
+                    })),
+                    Err(e) => tool_err(e),
+                }
+            }
             "project" => {
                 let cfg = match cfg_read_or_err() {
                     Ok(c) => c,
@@ -2864,6 +2891,7 @@ impl Argus {
         Parameters(args): Parameters<ExperimentArgs>,
         meta: RequestMetaObject,
         peer: Peer<RoleServer>,
+        Extension(receipt): Extension<Receipt>,
     ) -> Result<CallToolResult, McpError> {
         let dur = args.duration_sec.unwrap_or(30);
         if !(10..=185).contains(&dur) {
@@ -2898,6 +2926,9 @@ impl Argus {
                 Ok(result) => result,
                 Err(error) => return tool_err(error),
             };
+            receipt
+                .write("compile.json", &compiled)
+                .map_err(receipt_error)?;
             if !compiled.ok {
                 {
                     let mut s = self.session.lock().await;
@@ -2942,7 +2973,8 @@ impl Argus {
                 format!("{run_name}{}", i + 1)
             };
             let start = f64::from(compile_units + i);
-            match self
+            let attempt = MatchAttempt::new(&cfg.runs, &name);
+            let attempted = self
                 .drive_match(
                     &cfg,
                     &args.map,
@@ -2961,8 +2993,11 @@ impl Argus {
                     None,
                     None,
                 )
-                .await
-            {
+                .await;
+            receipt
+                .record_match(i as usize + 1, &attempt, &attempted)
+                .map_err(receipt_error)?;
+            match attempted {
                 Ok(r) => runs.push(r),
                 Err(e) => {
                     if runs.is_empty() {
@@ -2981,20 +3016,23 @@ impl Argus {
                 "comparing experiment tapes",
             )
             .await;
-        let compare = match args.baseline.as_deref() {
+        let comparison = match args.baseline.as_deref() {
             // an explicit baseline is still one named tape against the
             // candidates; "baseline" resolves the map's whole band
             Some(b) if b != "baseline" => {
-                intel_compare_scaled(&cfg, b, &ran.log_path, Some(&args.map)).ok()
+                intel_compare_scaled(&cfg, b, &ran.log_path, Some(&args.map))
             }
             _ => crate::intel::compare_runs_band(
                 &cfg,
                 &logs,
                 Some(&args.map),
                 args.primary.as_deref(),
-            )
-            .ok(),
+            ),
         };
+        receipt
+            .record_comparison("comparison.json", &comparison)
+            .map_err(receipt_error)?;
+        let compare = comparison.ok();
         let verdict = compare
             .as_ref()
             .map(|c| format!("{:?}", c.verdict).to_ascii_lowercase());
@@ -3049,6 +3087,7 @@ impl Argus {
         Parameters(args): Parameters<CampaignExperimentArgs>,
         meta: RequestMetaObject,
         peer: Peer<RoleServer>,
+        Extension(receipt): Extension<Receipt>,
     ) -> Result<CallToolResult, McpError> {
         let dur = args.duration_sec.unwrap_or(60);
         if !(10..=300).contains(&dur) {
@@ -3088,6 +3127,9 @@ impl Argus {
                 Ok(result) => result,
                 Err(error) => return tool_err(error),
             };
+            receipt
+                .write("compile.json", &compiled)
+                .map_err(receipt_error)?;
             if !compiled.ok {
                 return json_ok(&serde_json::json!({
                     "ok": false,
@@ -3132,7 +3174,8 @@ impl Argus {
             None
         };
 
-        let ran = match self
+        let attempt = MatchAttempt::new(&cfg.runs, &run_name);
+        let attempted = self
             .drive_match(
                 &cfg,
                 &args.map,
@@ -3151,22 +3194,19 @@ impl Argus {
                 None,
                 None,
             )
-            .await
-        {
-            Ok(r) => r,
-            Err(e) => {
-                if let Some(th) = puppet_thread {
-                    stop_puppet.store(true, std::sync::atomic::Ordering::Relaxed);
-                    let _ = th.join();
-                }
-                return tool_err(e);
-            }
-        };
+            .await;
 
         if let Some(th) = puppet_thread {
             stop_puppet.store(true, std::sync::atomic::Ordering::Relaxed);
             let _ = th.join();
         }
+        receipt
+            .record_match(1, &attempt, &attempted)
+            .map_err(receipt_error)?;
+        let ran = match attempted {
+            Ok(run) => run,
+            Err(error) => return tool_err(error),
+        };
 
         let log_content = match crate::paths::read_engine_text(&ran.log_path) {
             Ok(c) => c,
@@ -3210,6 +3250,7 @@ impl Argus {
         Parameters(args): Parameters<MatrixArgs>,
         meta: RequestMetaObject,
         peer: Peer<RoleServer>,
+        Extension(receipt): Extension<Receipt>,
     ) -> Result<CallToolResult, McpError> {
         let dur = args.duration_sec.unwrap_or(20);
         if !(10..=60).contains(&dur) {
@@ -3249,6 +3290,9 @@ impl Argus {
                 Ok(result) => result,
                 Err(error) => return tool_err(error),
             };
+            receipt
+                .write("compile.json", &compiled)
+                .map_err(receipt_error)?;
             if !compiled.ok {
                 return json_ok(&serde_json::json!({
                     "ok": false,
@@ -3261,6 +3305,7 @@ impl Argus {
         }
         let mut results = Vec::new();
         for (index, map) in maps.iter().enumerate() {
+            let name = format!("mx_{map}");
             {
                 let mut g = self.matches.lock().await;
                 g.reap();
@@ -3274,12 +3319,13 @@ impl Argus {
                 // tape and has to say so (#328).
                 g.refresh_committed_tape();
             }
+            let attempt = MatchAttempt::new(&cfg.runs, &name);
             let ran = self
                 .drive_match(
                     &cfg,
                     map,
                     dur,
-                    Some(&format!("mx_{map}")),
+                    Some(&name),
                     None,
                     args.skill,
                     None,
@@ -3294,9 +3340,19 @@ impl Argus {
                     None,
                 )
                 .await;
+            receipt
+                .record_match(index + 1, &attempt, &ran)
+                .map_err(receipt_error)?;
             match ran {
                 Ok(r) => {
-                    let cmp = intel_compare_scaled(&cfg, "baseline", &r.log_path, Some(map)).ok();
+                    let comparison = intel_compare_scaled(&cfg, "baseline", &r.log_path, Some(map));
+                    receipt
+                        .record_comparison(
+                            &format!("comparison-{:02}.json", index + 1),
+                            &comparison,
+                        )
+                        .map_err(receipt_error)?;
+                    let cmp = comparison.ok();
                     results.push(serde_json::json!({
                         "map": map,
                         "ok": r.ok,
@@ -3657,7 +3713,7 @@ impl ServerHandler for Argus {
     async fn call_tool(
         &self,
         request: CallToolRequestParams,
-        context: RequestContext<RoleServer>,
+        mut context: RequestContext<RoleServer>,
     ) -> Result<CallToolResponse, McpError> {
         if request.name == "match_run"
             && context
@@ -3681,8 +3737,25 @@ impl ServerHandler for Argus {
             let task = self.spawn_match_task(args, self.task_match_config.clone());
             return Ok(CallToolResponse::Task(CreateTaskResult::new(task)));
         }
+        let receipt =
+            Receipt::start(&request.name, request.arguments.as_ref()).map_err(receipt_error)?;
+        if let Some(receipt) = &receipt {
+            context.extensions.insert(receipt.clone());
+        }
         let call = ToolCallContext::new(self, request, context);
-        self.tool_router.call(call).await
+        let result = self.tool_router.call(call).await;
+        if let Some(receipt) = receipt {
+            receipt.finish(&result).map_err(|error| {
+                McpError::internal_error(
+                    format!(
+                        "could not finish the lab receipt at {}: {error}",
+                        receipt.path().display()
+                    ),
+                    None,
+                )
+            })?;
+        }
+        result
     }
 
     async fn list_tools(
