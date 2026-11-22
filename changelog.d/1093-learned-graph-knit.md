@@ -1,0 +1,2 @@
+Changed
+On maps without a compiled graph each new learned seat is linked to the seats around it whose walk passes in that direction, and the learned graph keeps growing to 224 seats within the edict budget instead of freezing at 104 about 40 seconds into a match ([#1093](https://github.com/saworbit/argus/issues/1093)); every native gate card read parity, and a gain in pickups, kills or stalls is not yet established.
