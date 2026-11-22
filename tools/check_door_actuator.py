@@ -36,7 +36,8 @@ def audit(source):
     assert 'bd = 1024;' in helper and 'UseStandPoint (d)' in helper
     assert 'argus_door_search_budget = 32;' in function(source,'Argus_TakeDoor')
     assert 'b.state == STATE_BOTTOM' in function(source,'Argus_DoorPressed')
-    assert 'if (!Argus_DoorPressed (self.ar_doorbtn))' in source
+    assert re.search(r'if \(self\.ar_doorbtn\.classname == "func_button"\s+'
+                     r'&& Argus_DoorPressed \(self\.ar_doorbtn\)', source)
     waiting=function(source,'Argus_DoorOpeningWait')
     assert not re.search(r'\b(?:self|d)\.\w+\s*=(?!=)',waiting),'wait predicate mutates gameplay state'
     assert 'd.state != STATE_UP' in waiting and 'Argus_DoorPast (d, far)' in waiting

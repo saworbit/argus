@@ -12147,47 +12147,15 @@ void() Argus_AI =
             {
                 to = Argus_GoalPoint (self.ar_doorbtn) - self.origin;
                 to_z = 0;
-                // CONTACT IS AN OVERLAP, NOT A RADIUS. This asked
-                // whether the opener's CENTRE was within 40 units,
-                // flattened in z, and then stood still to be touched.
-                // An opener is a brush, not a point. e1m2's t120 door
-                // is fired by a trigger 110 wide and 6 thick: standing
-                // at '442 -119 254' put the bot 38 units from its
-                // centre, inside the radius, while its box still
-                // stopped 18 units short of the volume. It froze
-                // waiting for a touch, and the engine only fires touch
-                // on MOVEMENT, so the touch could never come. Eight
-                // seconds to the give-up, re-route, straight back:
-                // five times and 35 s of Shane's 157 s session, the
-                // same deadlock as the v3.43 lift statue.
-                //
-                // Overlap instead. When it is false the bot keeps
-                // walking in, which is what fires the trigger; by the
-                // time it is true the movement that got us here has
-                // already fired it, so the hold below is safe.
-                if (!Argus_DoorPressed (self.ar_doorbtn))
-                    want = vectoyaw (to);
+                // Expanded bounds can overlap before a trigger fires.
+                // Keep walking while its door is closed. A nearby solid
+                // button can acknowledge activation through mover state.
+                if (self.ar_doorbtn.classname == "func_button"
+                    && Argus_DoorPressed (self.ar_doorbtn)
+                    && vlen (Argus_DoorShut (self.ar_door) - self.origin) < 320)
+                    self.ar_liftwait = 1;
                 else
-                {
-                    // press by contact. Hold for the slab ONLY when
-                    // the door is near enough to walk through as it
-                    // opens; at a REMOTE button (t6's lives in the
-                    // rockets pocket, 490u from its doors) the hold
-                    // froze bots 8 s facing nothing - Shane fought
-                    // one standing still there twice. Keep pushing
-                    // into the plate instead: contact fires it and
-                    // the state release above does the rest. (A cap
-                    // on the button SEARCH was tried first and
-                    // reverted: shelving every t6 goal re-routed the
-                    // whole roster into the plat *34 shaft fight,
-                    // hazard x35 at '2495 -992' two runs straight.)
-                    gp = (self.ar_door.absmin + self.ar_door.absmax) * 0.5
-                         - self.origin;
-                    if (vlen (gp) < 320)
-                        self.ar_liftwait = 1;
-                    else
-                        want = vectoyaw (to);
-                }
+                    want = vectoyaw (to);
             }
             else
             {
