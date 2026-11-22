@@ -46,6 +46,8 @@ def comparison_primary(control, candidate):
     for key in COMPARISON_FIELDS:
         require((key in control and key in candidate), 'missing comparison protocol field: ' + key)
         require((control[key] == candidate[key]), 'comparison protocol mismatch: ' + key)
+    # Older protocols predate cvar settings and ran without any.
+    require((control.get('cvars', []) == candidate.get('cvars', [])), 'comparison protocol mismatch: cvars')
     require((candidate['primary'] in SUPPORTED_PRIMARIES), 'unsupported registered primary')
     return candidate['primary']
 
@@ -104,6 +106,9 @@ def main():
                         help='record engine host frame timing in the private tapes')
     parser.add_argument('--primary', choices=SUPPORTED_PRIMARIES,
                         default='stall_parity')
+    parser.add_argument('--cvar', action='append', default=[], metavar='NAME=VALUE',
+                        help='set a console variable in the private autoexec before the map loads, '
+                             'for example scratch3=641 to run the learned graph on a registered map')
     args = parser.parse_args()
     maps = args.maps.split(',')
     require((1 <= len(maps) <= 12 and len(set(maps)) == len(maps)))
@@ -114,17 +119,26 @@ def main():
     require((args.port is None or 1024 <= args.port <= 65535))
     output = new_output(args.output, root=ROOT, create=False)
     executable = lab_executable(args.lab)
+    cvars = []
+    for setting in args.cvar:
+        require((re.fullmatch(r'[a-z_][a-z0-9_]{0,31}=[a-z0-9_.-]{1,32}', setting)), 'invalid --cvar ' + setting)
+        cvars.append(setting.split('=', 1))
     comparison_protocol = dict(maps=maps, seconds=args.seconds, skill=args.skill,
                                requested_ticrate=args.ticrate, primary=args.primary,
                                cli_sha256=digest(executable))
+    if cvars:
+        comparison_protocol['cvars'] = cvars
     baseline_protocol, baseline_rows = (load_comparison_baseline(args.baseline, comparison_protocol)
                                         if args.baseline else (None, []))
     stage_fixture(ROOT, output, args.source, runs=False)
     stamp_build(output / 'src')
     autoexec = None
-    if args.host_speeds:
+    if args.host_speeds or cvars:
         autoexec = (ROOT / 'game/argus/autoexec.cfg').read_text(encoding='utf-8')
+    if args.host_speeds:
         autoexec += '\nhost_speeds 1\n'
+    for name, value in cvars:
+        autoexec += f'\n{name} {value}\n'
     with private_game(ROOT, args.prefix, 'maplab', autoexec=autoexec) as game_dir:
         game = game_dir.name
         inputs = {p.relative_to(output).as_posix(): digest(p)
