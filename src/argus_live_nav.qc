@@ -303,7 +303,7 @@ void(entity button) Argus_ExplorePress =
 float() Argus_ExploreExit =
 {
     local float wet, remaining, range, yaw, reach, wall, score, best, i, door, approachdist, rise, rays;
-    local float directed, prize, chosen_level;
+    local float directed, prize, chosen_level, switch_depart;
     local vector direction, heading, supply, start, point, chosen, bank, approach, to;
     local entity item, button;
 
@@ -314,6 +314,7 @@ float() Argus_ExploreExit =
         return FALSE;
 
     wet = self.ar_feettype == CONTENT_WATER;
+    switch_depart = FALSE;
     if (self.ar_exploreuntil > 0)
     {
         // The door can take over after the passage was selected. Keep its
@@ -334,6 +335,8 @@ float() Argus_ExploreExit =
                 Argus_ExplorePress (self.al_exit_button);
                 if (self.al_exit_button.state == STATE_BOTTOM) return TRUE;
                 self.al_exit_prize_until = time + 7;
+                switch_depart = self.al_exit_button.enemy == self;
+                if (switch_depart) self.al_exit_scan = 0;
             }
             else if (remaining > 30) return TRUE;
         }
@@ -473,6 +476,11 @@ float() Argus_ExploreExit =
     self.al_exit_level = chosen_level;
     self.ar_exploreuntil = time + 1.8;
     if (wet) self.ar_exploreuntil = time + 2.6;
+    // Turn the movement wish onto the checked lane after our press.
+    // The normal physics spends the remaining momentum through the turn.
+    if (switch_depart && prize && !wet)
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw,
+            vectoyaw (chosen - self.origin), "switch_depart");
     dprint ("ARGUS explore "); dprint (self.netname); dprint (" ");
     dprint (vtos (self.origin)); dprint (" -> "); dprint (vtos (chosen)); dprint ("\n");
     return TRUE;
