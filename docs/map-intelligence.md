@@ -60,6 +60,24 @@ arm, the averages were 35.0 and 35.25. The played-rate candidates recorded
 no freezes or rescue warps on dm4 or dm6.
 [Fixtures and match results](../runs/teleport-pickup-timing.results.json)
 
+### Replan after the east teleporter on dm4
+
+In deathmatch on stock dm4 with its compiled graph, the east exit can
+leave a bot on the opposite side of the graph from its current route.
+The bot discards that route, waits through the exit coast, and starts a
+new search from a nearby waypoint it can reach on dry, supported ground.
+It keeps a valid previous pickup goal when the search can reach it.
+Otherwise it looks for a live pickup within 640 units of estimated route
+distance. Both choices respect active avoidance marks. If no goal is
+available or the handoff times out, ordinary goal selection resumes.
+
+The recovery and [walkway contact steering](behaviour-diagnostics.md#dm4-walkway-contact)
+were verified together. Replacement pickup completion and avoidance
+around lower-floor routes have their own follow-ups.
+[#1088](https://github.com/saworbit/argus/pull/1088),
+[#1085](https://github.com/saworbit/argus/issues/1085),
+[#1086](https://github.com/saworbit/argus/issues/1086)
+
 ## Pickup timing on lifts and trains
 
 Private QuakeSpasm fixtures ran the stock e1m1 armour lift and dm2 grenade

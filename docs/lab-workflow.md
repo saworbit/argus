@@ -167,6 +167,11 @@ explains their layout and how to copy them between sessions.
 - A short clean match is smoke evidence. It does not establish better win
   rate, balance or human readability. A selection event is not a pickup, and
   a shot event is not a hit.
+- For stock dm4 east-exit recovery, count failures against the number of
+  landings and compare each failure with the same bot's landing. Compare
+  walkway reversals per bot-minute of walkway exposure. Use touch receipts
+  to check that replacement pickups were collected.
+  [Read the recovery and movement markers](telemetry.md#log-records-and-their-meaning)
 
 For exact baselines, primary metrics and repeated-run statistics, use the
 [measurement guide](../tools/argus_mcp/README.md#what-the-instrument-can-see-and-when-to-stop).
