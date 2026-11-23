@@ -8,9 +8,21 @@ float AL_TRAIN = 5;
 float AL_DOOR = 6;
 float AL_SWIM = 7;
 
+// Seat ceiling for a learned graph. The fixed 104 that preceded it filled
+// within 40 seconds on dm1 and dm5 at about 170 live edicts, after which
+// nothing new could be learned for the rest of the match. Authored graphs
+// carry up to about 240 nodes, so the router and its frame slicing are
+// already measured at this scale; the edict guard in Argus_LiveSeat still
+// binds first on an entity-heavy map.
+float AL_SEAT_CAP = 224;
+
 entity al_nodes;
 float al_count;
+float al_links;
 float al_peak_edicts;
+float al_knitframe;
+float al_scanframe, al_scancount;
+float al_report;
 .entity al_next;
 .entity al_seat;
 .entity al_mover;
@@ -703,14 +715,19 @@ entity(vector point, float radius) Argus_LiveNear =
     best = world;
     while (node != world)
     {
-        dist = vlen (node.origin - point);
-        if (dist < radius && fabs (node.origin_z - point_z) < 19)
+        // The height test is the cheaper of the two and rejects most of
+        // a multi-level graph, so it runs first. The result is unchanged.
+        if (fabs (node.origin_z - point_z) < 19)
         {
-            traceline (point, node.origin, TRUE, self);
-            if (trace_fraction == 1 && !trace_startsolid)
+            dist = vlen (node.origin - point);
+            if (dist < radius)
             {
-                best = node;
-                radius = dist;
+                traceline (point, node.origin, TRUE, self);
+                if (trace_fraction == 1 && !trace_startsolid)
+                {
+                    best = node;
+                    radius = dist;
+                }
             }
         }
         node = node.al_next;
@@ -718,13 +735,15 @@ entity(vector point, float radius) Argus_LiveNear =
     return best;
 };
 
+void(entity seat) Argus_LiveKnit;
+
 entity(vector point) Argus_LiveSeat =
 {
     local entity node;
     local float count;
 
     node = Argus_LiveNear (point, 66);
-    if (node != world || al_count >= 104 || an_busy)
+    if (node != world || al_count >= AL_SEAT_CAP || an_busy)
         return node;
     // Leave capacity for projectiles, players, body queues and map logic.
     count = 1;
@@ -740,11 +759,12 @@ entity(vector point) Argus_LiveSeat =
     al_nodes = node;
     al_count = al_count + 1;
     if (count + 1 > al_peak_edicts) al_peak_edicts = count + 1;
-    if (al_count == 1 || al_count == 104 || al_count == floor (al_count / 16) * 16)
+    if (al_count == 1 || al_count == AL_SEAT_CAP || al_count == floor (al_count / 16) * 16)
     {
         dprint ("ARGUS live graph nodes "); dprint (ftos (al_count));
         dprint (" allocated_edicts "); dprint (ftos (al_peak_edicts)); dprint ("\n");
     }
+    Argus_LiveKnit (node);
     return node;
 };
 
@@ -754,6 +774,18 @@ entity(entity item) Argus_LiveItemSeat =
     local entity seat;
 
     if (time < item.al_item_scan) return world;
+    // One goal decision can visit every item on the map, and each scan
+    // walks the whole graph twice. A larger graph must not turn the first
+    // shopping trip of a match into one long frame, so a frame scans at
+    // most six unseated items. The rest keep their clock and are scanned
+    // by a later decision; an item skipped here is only unrouted for now.
+    if (al_scanframe != time)
+    {
+        al_scanframe = time;
+        al_scancount = 0;
+    }
+    if (al_scancount >= 6) return world;
+    al_scancount = al_scancount + 1;
     item.al_item_scan = time + 1.0;
     point = Argus_GoalPoint (item);
     seat = Argus_LiveNear (point + '0 0 22', 90);
@@ -778,6 +810,7 @@ void(entity from, entity to, float kind) Argus_LiveLink =
     else if (kind == AL_SWIM) Argus_NavLinkSwim (from, to);
     else Argus_NavLink (from, to);
     bit = Argus_NavGetLinkBit (from, to);
+    if (bit) al_links = al_links + 1;
     if (kind == AL_DROP) from.al_dropmask = from.al_dropmask | bit;
     if (kind == AL_PORTAL)
     {
@@ -791,6 +824,77 @@ void(entity from, entity to, float kind) Argus_LiveLink =
         dprint (vtos (from.origin)); dprint (" -> ");
         dprint (vtos (to.origin)); dprint ("\n");
     }
+};
+
+// Join a new seat to the seats around it, as FrikBot and Reaper link a
+// dropped waypoint to its neighbours. Traversal alone gives each actor
+// and each life its own chain of seats, and two chains joined only where
+// one actor happened to pass within a seat radius of the other's: on dm1
+// and dm5 bots spent 70 to 90 per cent of their time wandering, because
+// the learned graph rarely connected the bot's seat to an item's seat.
+//
+// Every knitted link passes the same clearance and floor walk as a
+// traversed one, in its own direction. Wet seats are left to traversal,
+// because the walk test refuses a liquid floor anyway. Each seat keeps
+// two of its eight slots for the typed evidence (drop, jump, portal,
+// mover, door, swim) that only an actor's traversal can supply, and a
+// frame knits at most one seat with at most eight neighbour tests, so
+// the cost per frame stays fixed as the graph grows.
+void(entity seat) Argus_LiveKnit =
+{
+    local entity node;
+    local vector delta;
+    local float tried;
+
+    if (al_knitframe == time) return;
+    if (pointcontents (seat.origin - '0 0 23') != CONTENT_EMPTY) return;
+    al_knitframe = time;
+    tried = 0;
+    node = al_nodes;
+    while (node != world && tried < 8)
+    {
+        delta = node.origin - seat.origin;
+        if (node != seat && fabs (delta_z) <= 22)
+        {
+            delta_z = 0;
+            if (vlen (delta) <= 136)
+            {
+                tried = tried + 1;
+                if (seat.an_nlinks < 6 && !Argus_NavGetLinkBit (seat, node)
+                    && Argus_LiveWalk (seat.origin, node.origin))
+                    Argus_LiveLink (seat, node, AL_WALK);
+                if (node.an_nlinks < 6 && !Argus_NavGetLinkBit (node, seat)
+                    && Argus_LiveWalk (node.origin, seat.origin))
+                    Argus_LiveLink (node, seat, AL_WALK);
+            }
+        }
+        node = node.al_next;
+    }
+};
+
+// A compact progress line for the learned graph: seats, links and how
+// many live items have a seat a route can end on. The ten second clock
+// is global, so the line costs one item walk per ten seconds.
+void() Argus_LiveGraphReport =
+{
+    local entity item;
+    local float total, seated;
+
+    if (time < al_report) return;
+    al_report = time + 10;
+    total = 0;
+    seated = 0;
+    item = argus_itemchain;
+    while (item != world)
+    {
+        total = total + 1;
+        if (item.ar_gnodeset) seated = seated + 1;
+        item = item.ar_nextitem;
+    }
+    dprint ("ARGUS live graph status seats "); dprint (ftos (al_count));
+    dprint (" links "); dprint (ftos (al_links));
+    dprint (" items_seated "); dprint (ftos (seated));
+    dprint (" of "); dprint (ftos (total)); dprint ("\n");
 };
 
 void() Argus_LiveNavReset =
@@ -851,6 +955,7 @@ void() Argus_LiveNavSample =
 
     if (!argus_live_nav || self.health <= 0 || self.cam_active || self.ar_taskgoal != world)
         return;
+    Argus_LiveGraphReport ();
     if (self.teleport_time > time) return;
     feet = self.origin + '0 0 -23';
     contents = pointcontents (feet);

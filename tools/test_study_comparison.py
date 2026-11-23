@@ -92,6 +92,28 @@ class RegisteredComparisons(unittest.TestCase):
         self.assertFalse(output.exists())
         self.assertFalse((self.root / 'engine').exists())
 
+    def test_cvar_settings_must_match_and_older_protocols_mean_none(self):
+        self.assertEqual(runner.comparison_primary(self.control, self.protocol), 'freezes')
+        candidate = dict(self.protocol, cvars=[['scratch3', '641']])
+        with self.assertRaisesRegex(AssertionError, 'cvars'):
+            runner.comparison_primary(self.control, candidate)
+        control = dict(self.control, cvars=[['scratch3', '641']])
+        self.assertEqual(runner.comparison_primary(control, candidate), 'freezes')
+        with self.assertRaisesRegex(AssertionError, 'cvars'):
+            runner.comparison_primary(control, self.protocol)
+
+    def test_malformed_cvar_is_refused_before_study_output_or_lab_start(self):
+        output = self.root / 'backups' / 'cvar-study'
+        for setting in ('scratch3', 'scratch3=641;quit', 'Scratch3=641', 'scratch3= 641'):
+            with self.subTest(setting=setting):
+                argv = ['run_map_intelligence.py', '--maps', 'dm3', '--output', str(output),
+                        '--prefix', 'cvar_study', '--lab', str(self.exe), '--cvar', setting]
+                with patch.object(sys, 'argv', argv), patch.object(runner, 'Lab') as lab:
+                    with self.assertRaisesRegex(AssertionError, 'invalid --cvar'):
+                        runner.main()
+                    lab.assert_not_called()
+                self.assertFalse(output.exists())
+
     def test_empty_baseline_is_refused(self):
         folder = self.root / 'baseline'; folder.mkdir()
         (folder / 'protocol.json').write_text(json.dumps(self.control))
