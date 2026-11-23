@@ -13,8 +13,8 @@ describes the result and links to its implementation or detailed evidence.
 | Status | What to use |
 |---|---|
 | Development source | [Unreleased](#unreleased) includes runtime route learning, doorway exploration and timed weapon approaches ([#1084](https://github.com/saworbit/argus/pull/1084)), alongside the earlier train and ledge repairs. The [human play verdict](docs/behaviour-diagnostics.md#player-verdict-on-dm4-and-dm2) concerns the supplied gait build. |
-| Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
-| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
+| Latest gameplay update | 2026-11-23: build `87ad6bc2a05a` installed from main, the first install since 2026-11-15, so it carries every change in Unreleased, including runtime route learning ([#1084](https://github.com/saworbit/argus/pull/1084)), the dm4 walkway recovery ([#1088](https://github.com/saworbit/argus/pull/1088)) and the learned graph knit ([#1097](https://github.com/saworbit/argus/pull/1097)); see Unreleased |
+| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `1F685B58EA13BED298F42F89DAA59BDB` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
 | Lab version | 0.33. See the [operator guide and version history](tools/argus_mcp/README.md#versions). |
 

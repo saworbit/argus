@@ -1,0 +1,2 @@
+Changed
+Install main as the gameplay binary, build `87ad6bc2a05a` with MD5 `1F685B58EA13BED298F42F89DAA59BDB`, the first install since [#841](https://github.com/saworbit/argus/pull/841), so players now get every source change merged since 2026-11-15, including runtime route learning ([#1084](https://github.com/saworbit/argus/pull/1084)), the dm4 walkway and east teleporter recovery ([#1088](https://github.com/saworbit/argus/pull/1088)) and the learned graph knit ([#1097](https://github.com/saworbit/argus/pull/1097)).
