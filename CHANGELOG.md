@@ -12,7 +12,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | [Unreleased](#unreleased) includes the dm2 train recovery ([#1075](https://github.com/saworbit/argus/pull/1075)), lqdm2 health approach ([#1073](https://github.com/saworbit/argus/pull/1073)) and dm6 rocket ledge route ([#1074](https://github.com/saworbit/argus/pull/1074)). The [human play verdict](docs/behaviour-diagnostics.md#player-verdict-on-dm4-and-dm2) concerns the supplied gait build. |
+| Development source | [Unreleased](#unreleased) includes runtime route learning, doorway exploration and timed weapon approaches ([#1084](https://github.com/saworbit/argus/pull/1084)), alongside the earlier train and ledge repairs. The [human play verdict](docs/behaviour-diagnostics.md#player-verdict-on-dm4-and-dm2) concerns the supplied gait build. |
 | Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -26,15 +26,11 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
-#### Bot adaptation candidate
-
-Tested a development build with more responsive targeting, safer pursuit
-and supply plans that adapt to the bot's inventory and route. All three
-fresh comparisons passed on the rebased build. The earlier lqdm2 stall
-rejection still blocks adoption.
-[Behaviour changes and automated results](docs/map-intelligence.md#bot-adaptation-verification)
-
 #### Fixed
+
+- Allow for turning time on timed weapon-switch approaches and steer onto the checked exit once the switch fires ([#1084](https://github.com/saworbit/argus/pull/1084)). [Stock match results](docs/classic-bot-comparisons.md#ordinary-pickups-through-timed-switches)
+
+- Retain numbered fteqcc warnings and errors in the lab's compile diagnostics, including diagnostics with Windows paths ([#1078](https://github.com/saworbit/argus/issues/1078)).
 
 - Replan after eight seconds when a stationary bot misses the dm2 train from the edge of its approach deck ([#1054](https://github.com/saworbit/argus/issues/1054)).
 - Keep the climb to an overhead route entry before taking a direct shortcut, as in the lqdm2 health approach ([#1053](https://github.com/saworbit/argus/issues/1053)).
@@ -43,6 +39,9 @@ rejection still blocks adoption.
 #### Added
 
 - Save and search experiment receipts, including failed attempts and inconclusive statistical results. Back up new telemetry in verified incremental copies ([#1081](https://github.com/saworbit/argus/pull/1081)).
+- Learn routes from player and bot traversal in deathmatch when no waypoint graph is registered. Bots can explore checked passages and recover through clear water lanes when a supply route stalls ([#1084](https://github.com/saworbit/argus/pull/1084)).
+
+- Report accepted major pickups, health lost to self-damage and optional server-frame timing from retained match tapes ([#1084](https://github.com/saworbit/argus/pull/1084)).
 
 - Verify missed dm2 train waits from the two reported deck positions with the `--near-seats` fixture, including a dry far-deck crossing from the boarding pad ([#1054](https://github.com/saworbit/argus/issues/1054)).
 
@@ -582,6 +581,8 @@ rejection still blocks adoption.
   engine on dm4 and dm2 (#530).
 
 #### Changed
+
+- Use recent opponent cues, own ammo and stack, and major-item respawn timing to choose fights, weapons and nearby supplies ([#1084](https://github.com/saworbit/argus/pull/1084)). [Decision and match results](docs/classic-bot-comparisons.md#runtime-navigation-and-duel-decisions)
 
 - Align lava death probes across the lab and analyser, distinguish freeze HP loss from the release threshold, and clarify the combat detour and weapon switch totals ([#1039](https://github.com/saworbit/argus/issues/1039), [#1046](https://github.com/saworbit/argus/issues/1046), [#1058](https://github.com/saworbit/argus/issues/1058)).
 

@@ -175,11 +175,12 @@ stop is not a movement failure. Pauses are gated to skill 1 and above, never
 run in co-op, and scale with each personality's deliberation appetite. See the
 [measurement, refusals and limits](behaviour-diagnostics.md#human-gait-hesitation-and-cautious-liquid-approach).
 
-### Navigation is generated, not loaded at runtime
+### Navigation graphs
 
-QuakeC has no file I/O. A BSP is sampled offline into generated
-`argus_nav_<map>.qc`, compiled into `progs.dat`, and registered in both the
-dispatcher and build manifest. Its `.qc.json` twin is for tooling.
+QuakeC has no file I/O. For a registered graph, the generator samples a BSP
+offline and writes `argus_nav_<map>.qc`. The build compiles the graph into
+`progs.dat` and the dispatcher selects it at map load. The `.qc.json` twin is
+for tooling.
 
 Generation accounts for player-hull support, movement arcs, doors and mover
 geometry, spawn reach and the edict budget. Real-engine probes record refused
@@ -194,6 +195,20 @@ e1m3/e1m4 files remain unregistered; see the [wider-map findings](mover-intellig
 
 Do not hand-edit generated navigation. Use the
 [lab generation and validation workflow](lab-workflow.md#add-or-regenerate-navigation).
+
+In deathmatch without a registered graph, `src/argus_live_nav.qc` samples bot
+and player traversal to build the graph in memory. It caps growth at 104 seats,
+reserves capacity for gameplay edicts and adds links while the shared route
+queue is idle. Traversal can establish directed drops, jumps, unconditional
+teleports, mover rides, door passages and swim exits. A failed route action
+temporarily blocks its learned edge. The graph is rebuilt on each map load.
+
+When a chase or pickup route runs out, bots check nearby passages and
+remember recent exits. A reachable switch can become an intermediate goal for
+a blocked weapon. A confirmed press starts the timed run through the opening.
+Bots complete learned pickup goals on the engine's accepted touch. The
+[stock match and fixture results](classic-bot-comparisons.md#runtime-navigation-and-duel-decisions)
+describe which of these behaviours have been witnessed in play.
 
 ### Aim and difficulty
 
@@ -215,7 +230,9 @@ Compare matched tick classes and retain the source identity for every arm.
 | `src/argus.qc` | Decisions, physics, combat, perception, skills and roster |
 | `src/argus_tactics.qc` | Bounded tactical state machine |
 | `src/argus_tactic_fixture.qc` | Explicit developer-only engine fixture |
-| `src/argus_nav.qc` | Runtime sliced search and route handling |
+| `src/argus_nav.qc` | Frame-sliced search and typed route handling |
+| `src/argus_live_nav.qc` | Traversal sampling, edge cooldowns, room and switch exploration, and checked swim recovery |
+| `src/argus_duel.qc` | Stack and splash checks, momentum, weapon scoring, threat bearings and major-item timing |
 | `src/items.qc` / `src/weapons.qc` / `src/triggers.qc` | Stock pickup, firing and teleport behaviours that provide live observations to Argus |
 | `src/argus_nav_dispatch.qc` | Hand-maintained map dispatcher |
 | `src/argus_nav_<map>.qc` | Generated graph; active only with compilation-list and dispatcher entries |

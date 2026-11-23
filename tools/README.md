@@ -586,8 +586,9 @@ append-once evidence. Installed gameplay binaries remain unchanged.
 | Tool | Inputs and controls | Output / acceptance |
 |---|---|---|
 | `audit_route_distance.py` | `--maps`, `--gravity`, `--objective hops-distance` (default) or `distance`; optional `--output` | Offline generated-QC audit against an independent shortest-path oracle; no engine |
-| `run_map_intelligence.py` | `--output`, `--prefix`; optional frozen `--source`, `--maps`, `--seconds` (10 to 185), `--repeats` (1 to 5), `--skill`, `--primary`, `--baseline`, `--ticrate`, `--port`, `--lab` | Compile once; protocol, named tapes and native briefs; default eight maps, 60 seconds, two repeats, skill 2 |
+| `run_map_intelligence.py` | `--output`, `--prefix`; optional frozen `--source`, `--maps`, `--seconds` (10 to 185), `--repeats` (1 to 5), `--skill`, `--primary`, `--baseline`, `--ticrate`, `--port`, `--lab`, `--host-speeds` | Stamp and compile the private source once. Record a protocol, named tapes and native briefs. Defaults to eight maps, 60 seconds, two repeats and skill 2. |
 | `report_map_intelligence.py` | Control and candidate folders; optional `--output`, `--native-gates`, `--require-green`, `--lab` | Verify tape hashes and summarise matched arms. With complete native gates and `--require-green`, exit 2 when a map's verdict is mixed or regressed |
+| `report_architecture.py` | One or more named raw tape paths | JSON per tape with accepted major pickups, self-damage, arm outcomes, sampled learned links and server-frame timing when available |
 | `verify_route_distance.py` | `--output`, `--prefix`; optional `--source`, `--ticrate`, `--port`, `--lab`, `--compile-only`, `--expect-failure` | Native routing and shopping contracts; declared legacy control must fail |
 | `verify_freeze_recovery.py` | `--output`, `--prefix`; optional `--source`, `--maps`, `--seat original\|corner\|south`, `--ticrate`, `--port` | Private physical recovery and guard receipts; control/source and seat determine expected checks |
 | `verify_mover_transfer.py` | `--output`, `--prefix`; optional `--source`, `--maps e1m6,dm3`, `--control`, `--ticrate`, `--port` | Continuing-route transfer, safe launch, dry static-floor landing and zero rescue warps; `--control` retains an incomplete baseline |
@@ -603,8 +604,10 @@ before output or matches start. Single-pair cards remain advisory; use the
 report's final native band cards for the study judgment. Older artifacts are
 unchanged, and severe freezes retain their independent veto. Cadence choices
 are `.0139` and `.1`; measure actual frames rather than assuming the request
-was honoured. Graph presence alone is not runtime navigation: the report
-requires both frozen compilation-list and dispatcher registration.
+was honoured. The report credits compiled coverage only with both frozen
+compilation-list and dispatcher registration. For coverage learned during
+play, inspect the runtime witnesses with
+[`report_architecture.py`](../docs/lab-workflow.md#measure-runtime-navigation-and-duel-outcomes).
 
 Engine-free receipt and budget tests are `test_nav_budget.py`,
 `test_map_intelligence_report.py`, `test_study_comparison.py`,
