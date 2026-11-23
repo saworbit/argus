@@ -48,8 +48,8 @@ These keys may also be supplied as environment variables; environment wins.
 | `ARGUS_FTEQCC` | Modern fteqcc executable |
 | `ARGUS_ENGINE` | Dedicated-capable Quake executable |
 | `ARGUS_BASEDIR` | Engine data directory containing `id1/` and the `argus/` mod |
-| `ARGUS_RUNS` | Native lab tape and receipt directory and `skeptic` tape lookup, defaulting to `runs/` |
-| `ARGUS_PYTHON` | Python 3 executable |
+| `ARGUS_RUNS` | Tape and receipt directory for the native lab and MCP receipt search, defaulting to `runs/` |
+| `ARGUS_PYTHON` | Python 3 executable for lab helpers, including receipt search |
 
 `ARGUS_MAPS` optionally overrides the default `maps_local/`. The game data,
 maps and player model are separate from the lab binary. Use the
@@ -86,8 +86,9 @@ config_check
 see what=map name=dm4
 ```
 
-Inspect-only tools need the repository path. Compile, navigation generation
-and match tools require the full configuration and name any missing key.
+Inspect-only tools need the repository path. Receipt search also needs Python.
+Compile, navigation generation and match tools require the full configuration
+and name any missing key.
 
 ## 4. Preserve human sessions before launching an engine
 
@@ -129,6 +130,8 @@ Examples below are **MCP calls**:
 | After a QuakeC edit | `experiment map=dm4 duration_sec=30 skill=2` |
 | Several maps, one compile | `matrix_experiment maps=["dm2","dm4"] duration_sec=30 skill=2` |
 | Compare similar-length saved runs | `compare_runs log_a=baseline log_b=latest` |
+| Find a saved failure | `see what=receipts name=failed` |
+| Find unsettled dm2 comparisons | `see what=receipts name=dm2:inconclusive` |
 | Change the live baseline | `tune command="skill 3"` |
 | Read live status | `see what=status` |
 
@@ -140,6 +143,11 @@ respawn; changing a compiled constant requires a new build.
 Read the returned `next_steps`, native brief and quality gates. Reuse the
 status response's `next_line` as `since_line` on the next status call to read
 only new output.
+
+Pass `question` to an experiment or comparison to record what it should
+settle. Saved receipts keep the recorded inputs, outcomes and available
+tapes. The [recording and backup guide](telemetry.md#experiment-receipts)
+explains their layout and how to copy them between sessions.
 
 ### What the result establishes
 

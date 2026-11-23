@@ -42,6 +42,8 @@ rejection still blocks adoption.
 
 #### Added
 
+- Save and search experiment receipts, including failed attempts and inconclusive statistical results. Back up new telemetry in verified incremental copies ([#1081](https://github.com/saworbit/argus/pull/1081)).
+
 - Verify missed dm2 train waits from the two reported deck positions with the `--near-seats` fixture, including a dry far-deck crossing from the boarding pad ([#1054](https://github.com/saworbit/argus/issues/1054)).
 
 - Keep fixed stock-map witnesses for the dm6 rocket ledge, e1m1 slime stair, lqdm2 health pin and e1m3 shelf climb ([#1057](https://github.com/saworbit/argus/issues/1057), [#1056](https://github.com/saworbit/argus/issues/1056), [#1053](https://github.com/saworbit/argus/issues/1053), [#623](https://github.com/saworbit/argus/issues/623)).
