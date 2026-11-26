@@ -4,4 +4,4 @@
 #   cd .github/requirements
 #   uvx --python 3.12 --from pip-tools pip-compile --generate-hashes --allow-unsafe --strip-extras --no-emit-index-url --output-file lint.txt lint.in
 check-jsonschema==0.39.0
-ruff==0.17.5
+ruff==0.17.6
